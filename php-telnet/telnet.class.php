@@ -44,7 +44,7 @@ class Telnet {
 	* @return void
 	*/
 	public function __construct($host = '127.0.0.1', $port = '23', $timeout = 10){
-		$this->setPrompt(">");
+		$this->setPrompt("Robot command:");
 		$this->host = $host;
 		$this->port = $port;
 		$this->timeout = $timeout;
@@ -100,7 +100,7 @@ class Telnet {
 		$this->socket = fsockopen($this->host, $this->port, $this->errno, $this->errstr, $this->timeout);
 		
 		if (!$this->socket){        	
-			throw new Exception("Cannot connect to $this->host on port $this->port");
+			throw new Exception("Cannot connect to $this->host on port $this->port ERROR: $this->errno REASON $this->errstr");
 		}
 		
 		return self::TELNET_OK;
@@ -128,9 +128,16 @@ class Telnet {
 	* @param string $command Command to execute      
 	* @return string Command result
 	*/
-	public function exec($command) {
+	public function execCRLF($command) {
 		
 		$this->write($command);
+		$this->waitPrompt();
+		return $this->getBuffer();
+	}
+	
+	public function exec($command) {
+	
+		$this->write($command,FALSE);
 		$this->waitPrompt();
 		return $this->getBuffer();
 	}
@@ -173,6 +180,7 @@ class Telnet {
 	*/
 	public function setPrompt($s = '$'){
 		$this->prompt = $s;
+		//echo "prompt = ".$this->prompt;
 		return self::TELNET_OK;
 	}
 	
@@ -202,7 +210,7 @@ class Telnet {
 	* @return boolean
 	*/
 	private function readTo($prompt){
-	
+	 //echo "readTo ";
 		if (!$this->socket){
 			throw new Exception("Telnet connection closed");            
 		}
@@ -213,6 +221,7 @@ class Telnet {
 		do{
 			
 			$c = $this->getc();
+			//echo $c;
 			
 			if ($c === false){
 				throw new Exception("Couldn't find the requested : '" . $prompt . "', it was not in the data returned from server : '" . $buf . "'");                
